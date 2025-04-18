@@ -8,7 +8,7 @@
 
 .data
 esp32_config_mux_cmd: .asciz "AT+CIPMUX=1\r\n"
-esp32_config_TCP_server_cmd: .asicz "AT+CIPSERVER=1,80"
+esp32_config_TCP_server_cmd: .asciz "AT+CIPSERVER=1,80"
 esp32_start_TCP_cmd: .asciz "AT+CIPSTART=\"TCP\",\"192.168.5.1\",80\r\n"
 esp32_passthrough_mode_cmd: .asciz "AT+CIPMODE=1\r\n"
 esp32_server_send_cmd: .asciz "AT+CIPSEND=2,2\r\n"
@@ -61,7 +61,7 @@ esp32_config_mux:
 
 esp32_config_TCP_server:
     PUSH {lr, r1}
-    LDR r1, =esp32_config_mux_cmd
+    LDR r1, =esp32_config_TCP_server_cmd
     BL uart0_wifi_write
     POP {lr, r1} 
     BX lr
@@ -80,12 +80,12 @@ esp32_config_passthrough_mode:
     POP {lr, r1} 
     BX lr
 
-esp32_start_open_send:
-    PUSH {lr, r1}
-    LDR r1, =esp32_start_open_send_cmd
-    BL uart0_wifi_write
-    POP {lr, r1} 
-    BX lr
+@ esp32_start_open_send:
+@     PUSH {lr, r1}
+@     LDR r1, =esp32_start_open_send_cmd
+@     BL uart0_wifi_write
+@     POP {lr, r1} 
+@     BX lr
 
 esp32_marco:
     PUSH {lr, r1, r2}
