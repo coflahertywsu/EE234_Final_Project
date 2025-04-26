@@ -3,6 +3,8 @@
  *
  *  Created on: Apr 4, 2022
  *      Author: jacob
+ *	Updated on: March, 23 2025
+ *		By: Ron Shackelford
  */
 
 .ifndef SRC_ROBOTMOTORS_S_
@@ -58,11 +60,11 @@ setup_motor:
 	STR r0, [r1, #0x08]
 
 	# Setup initial motor direction if we want
-	MOV r0, #0
+	MOV r0, #1
 	STR r0, [r1, #0x04]
 
-	# Setup the motor PWM freq. of 100MHz / 4095 = 24.42kHz
-	MOV r0, #4095
+	# Setup the motor PWM freq. of 100MHz / 131071 = 1526 Hz
+	LDR r0, =#65535
 	STR r0, [r1, #0x14]
 
 	# Enable the H-Bridge
@@ -76,38 +78,79 @@ setup_motor:
 change_motor_speed:
 	# Change motor speed (hence duty cycle) to r2
 	STR r2, [r1, #0x08]
-
 	BX lr
 
-# Let's assume that r1 is passed into this function call as the base address of the corresponding motor to modify
-# Let's assume that r2 is passed into this function call as the motor dir; 0 for clockwise, 1 for counter-clockwise
+# r1 is the base address of the corresponding motor to modify
+# r2 is the motor dir; 0 for clockwise, 1 for counter-clockwise
 change_motor_dir:
-	# IT WOULD BE WISE TO ADD SOME CODE HERE TO FIRST CHECK THE CURRENT MOTOR DIRECTION, IF WE ARE TRULY CHANGING
-	# DIRECTIONS, THEN FIRST SET SPEED TO 0, AND CHANGE DIRECTIONS. YOU CAN SET SPEED BACK TO ITS VALUE AFTERWARDS.
 
-	# Change motor dir to r2
-	STR r2, [r1, #0x08]
-
+	# Change motor direction to value stored in r2
+	LDR r0, [r1, #0x08] @ store speed in r0
+	MOV r3, #0
+	STR r3, [r1, #0x08] @ set speed to 0
+	STR r2, [r1, #0x04] @ change direction
+	STR r0, [r1, #0x08] @ reset speed 
 	BX lr
 
 # Let's assume that r1 is passed into this function call as the base address of the corresponding motor to modify
 # Let's assume that r0 returns the motors RPM value
 read_motor_rpm:
-
+	PUSH {lr, r2, r3, r4}
+	MOV r4, r1
 	# As soon as the encoder is enabled, a raw RPM value is generated.
 	# In order to read another raw RPM value, the encoder enable bit must be set to 0 and then 1 again
 
 	# 1. Set Encoder EN to 1
+	MOV r2, #1
+	STR r2, [r4, #0x0C]
 
 	# 2. Short delay to wait until the value has been updated in read register
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
 
 	# 3. Grab the raw RPM value.
+	LDR r3, [r4, #0x10]
 
 	# 4. Manipulate to true RPM value based on: RPM = (1MHz / (RPM_raw * GearRatio)) * (60s/min)
+	MOV r2, #3712
+	MUL r3, r3, r2
+	LDR r2, =#100000000
+	MOV r0, #0
+	CMP r3, #0
+	BEQ endReadRPM
+	divideRPM:
+		SUB r2, r2, r3
+		ADD r0, r0, #1
+		CMP r2, r3
+		BGT divideRPM
+	MOV r1, #60
+	MUL r0, r0, r1
 
 	# 5. Clear Encoder EN to 0
+	endReadRPM:
+		MOV r2, #0
+		STR r2, [r4, #0x0C]
+		POP {lr, r2, r3, r4}
+		BX lr
 
-	BX lr
+
+# delay uses counts down from the number passed in r1
+# If 1 is placed in r1 the delay is ~ 10.7 ns 
+# 100,000,000 in r1 is ~ 1.7 sec
+delay:
+    again:
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        SUBS r1, r1, #1
+        BNE again
+    BX lr
 
 
 .endif /* SRC_ROBOTMOTORS_S_ */
