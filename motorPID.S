@@ -68,7 +68,7 @@ update_motors:
 
 # r0 is used to return motor0 control signal u(t)
 calculate_mot0_control:
-    PUSH {lr, r1-r3}
+    PUSH {lr, r1-r6}
     BL get_mot0_error
     MOV r1, r0          @ error is now in r1
     BL mot0_eint    
@@ -89,13 +89,13 @@ calculate_mot0_control:
     LDRGT r0, =#65535   @ if the control value is more than the max set it to the max
     CMP r0, r3
     LDRLT r0, =#0       @ if the control value is less than the min set it to the min
-    POP {lr, r1-r3}
+    POP {lr, r1-r6}
     BX lr
 
 
 # r0 is used to return motor1 control signal u(t)
 calculate_mot1_control:
-    PUSH {lr, r1-r3}
+    PUSH {lr, r1-r6}
     BL get_mot1_error
     MOV r1, r0          @ error is now in r1
     BL mot1_eint    
@@ -116,7 +116,7 @@ calculate_mot1_control:
     LDRGT r0, =#65535   @ if the control value is more than the max set it to the max
     CMP r0, r3
     LDRLT r0, =#0       @ if the control value is less than the min set it to the min
-    POP {lr, r1-r3}
+    POP {lr, r1-r6}
     BX lr
 
 
@@ -206,7 +206,8 @@ mot1_eint:
     POP {lr, r2-r3}
     BX lr
 
-
+# r0 is used to return the difference error
+# r1 is used to pass in the current error
 mot0_dedt:
     PUSH {lr, r2}
 
@@ -217,6 +218,8 @@ mot0_dedt:
     POP {lr, r2}
     BX lr
 
+# r0 is used to return the difference error
+# r1 is used to pass in the current error
 mot1_dedt:
     PUSH {lr, r2}
 

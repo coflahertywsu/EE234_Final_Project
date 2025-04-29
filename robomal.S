@@ -14,6 +14,7 @@
 .data
 
 debug_statement1: .asciz "Copy Instructions occurred"
+program_string: .asciz "This is Program Mode brought to you by robomal!\n"
 
 .set HALF_WORD_MASK, 0xFFFF
 .set QUARTER_SEC, 25000000
@@ -43,7 +44,6 @@ arithmeticInstructions: .word addData, subtractData, multiplyData
 branchInstructions: .word branch, brancheq, branchne, halt 
 robotControlInstructions: .word left, right, forward, backward, brake, spinLeft, spinRight
 
-program_string: .asciz "This is Program Mode brought to you by robomal!\n"
 
 .text
 
@@ -107,22 +107,22 @@ runROBO_Program:
         CMP r8, #0x33
         BNE ROBO_loop
 
-        end_ROBO_loop:
-            // set the motors to 0 rpm
-            MOV r11, #0
-            MOV r12, #0
+    end_ROBO_loop:
+        // set the motors to 0 rpm
+        MOV r11, #0
+        MOV r12, #0
 
-            // set a delay to allow the motors time to stop
-            LDR r1, =#46500000
-            BL delay
+        // set a delay to allow the motors time to stop
+        LDR r1, =#46500000
+        BL delay
 
-            // turn off the GTC
-            LDR r0, =GTC_BASEADDR
-            LDR r1, =#0xFF0E
-            STR r1, [r0, #0x08]
+        // turn off the GTC
+        LDR r0, =GTC_BASEADDR
+        LDR r1, =#0xFF0E
+        STR r1, [r0, #0x08]
 
-            POP {lr}
-            BX lr
+        POP {lr}
+        BX lr
 
 # Simulate one fetch, decode, execute instruction cycle
 simulateClockCycle:
@@ -254,7 +254,7 @@ execute:
             SUB r12, r10, r5
             // delay for prescribed amount of time
             MOV r1, r9
-            LSL r1, #16
+            LSL r1, #20
             BL delay
             MOV r11, #0
             MOV r12, #0
@@ -273,7 +273,7 @@ execute:
             ADD r12, r10, r5         
             // delay for prescribed amount of time
             MOV r1, r9
-            LSL r1, #16
+            LSL r1, #20
             BL delay
             MOV r11, #0
             MOV r12, #0
@@ -291,7 +291,7 @@ execute:
             MOV r12, r10
             // delay for prescribed amount of time
             MOV r1, r9
-            LSL r1, #16
+            LSL r1, #20
             BL delay
             MOV r11, #0
             MOV r12, #0
@@ -309,7 +309,7 @@ execute:
             MOV r12, r10
             // delay for prescribed amount of time
             MOV r1, r9
-            LSL r1, #16
+            LSL r1, #20
             BL delay
             MOV r11, #0
             MOV r12, #0
@@ -320,7 +320,7 @@ execute:
             MOV r12, #0       
             // delay for prescribed amount of time
             MOV r1, r9
-            LSL r1, #16
+            LSL r1, #20
             BL delay
             B endExecute
 
@@ -336,7 +336,7 @@ execute:
             MOV r12, r10
             // delay for prescribed amount of time
             MOV r1, r9
-            LSL r1, #16
+            LSL r1, #20
             BL delay
             MOV r11, #0
             MOV r12, #0
@@ -354,7 +354,7 @@ execute:
             MOV r12, r10        
             // delay for prescribed amount of time
             MOV r1, r9
-            LSL r1, #16
+            LSL r1, #20
             BL delay
             MOV r11, #0
             MOV r12, #0

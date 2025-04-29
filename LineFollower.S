@@ -28,8 +28,8 @@
 
 
 .data
+line_follower_string: .asciz "Follow the yellow brick road...or maybe just this black line.\r\n"
 
-// line_follower_string: .asciz "You have entered Line Following!\r\n"
 
 LF_err_int0: .word 0
 LF_err_int1: .word 0

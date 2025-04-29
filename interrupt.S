@@ -122,7 +122,7 @@ IRQ_Handler:
     BNE endIRQ_Handler
 
 GTC_Int:
-    PUSH {lr}
+    PUSH {lr, r2, r3}
     BL update_motors
 
 endGTC_Int:
@@ -136,7 +136,7 @@ endIRQ_Handler:
     MOV r1, #27
     STR r1, [r0]
     
-    POP {lr}
+    POP {lr, r2, r3}
     MOV pc, lr
 
 .endif /* SRC_interrupt_S_ */
