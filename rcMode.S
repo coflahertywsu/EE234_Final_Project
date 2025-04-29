@@ -28,22 +28,6 @@ rc_mode:
         CMP r0, #0xF3
         BNE rc_loop
 
-
-    POP {lr, r1}
-    BX lr
-
-
-line_follower_mode:
-    PUSH {lr, r1}
-    LDR r1, =line_follower_string
-    BL uart1_write
-
-    lf_loop:
-        BL uart0_read_structured  @ this will break out based on the halt button being pressed
-        LDRB r0, [r0]  @
-        CMP r0, #0xF3  @
-        BNE lf_loop
-
     POP {lr, r1}
     BX lr
 

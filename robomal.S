@@ -60,7 +60,7 @@ program_mode:
 
         LDRB r1, [r0, #1]			@ load number of instructions to be delivered
         SUB r1, r1, #1
-        MOV r2, #0			@ instructions read counter
+        MOV r2, #1			@ instructions read counter
         LDR r3, =robomal_instruction_set
         BL uart1_write_hex_chars
 
@@ -111,6 +111,11 @@ runROBO_Program:
             // set the motors to 0 rpm
             MOV r11, #0
             MOV r12, #0
+
+            // set a delay to allow the motors time to stop
+            LDR r1, =#46500000
+            BL delay
+
             // turn off the GTC
             LDR r0, =GTC_BASEADDR
             LDR r1, =#0xFF0E

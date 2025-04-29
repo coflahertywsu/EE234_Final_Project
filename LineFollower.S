@@ -18,7 +18,7 @@
 
 .set LF_kp, 45     @ sets the line follow proportional constant kp
 .set LF_ki, 1      @ sets the line follow integral constant ki
-.set LF_kd, 900    @ sets the line follow derivative constant kd
+.set LF_kd, 950    @ sets the line follow derivative constant kd
 
 .global LF_err_int0
 .global LF_err_int1
@@ -28,6 +28,8 @@
 
 
 .data
+
+// line_follower_string: .asciz "You have entered Line Following!\r\n"
 
 LF_err_int0: .word 0
 LF_err_int1: .word 0
@@ -40,8 +42,12 @@ LF_err_int4: .word 0
 
 .text
 
-lineFollower:
+line_follower_mode:
     PUSH {lr}
+    LDR r1, =line_follower_string
+    BL uart1_write
+
+    // set the direction to forward
     LDR r1, =MOTOR_0_BASEADDR
     MOV r2, #1
     BL change_motor_dir
@@ -54,7 +60,6 @@ lineFollower:
     MOV r11, r10
     MOV r12, r10
 
-
     // turn on the GTC
     LDR r0, =GTC_BASEADDR
     LDR r1, =#0xFF0F
@@ -62,7 +67,11 @@ lineFollower:
 
 // Main loop while seeking the line    
     seekLine:
-        # delay 2 ms
+        BL uart0_read_structured  @ this will break out based on the halt button being pressed
+        LDRB r0, [r0]  @
+        CMP r0, #0xF3  @
+        BEQ end_line_follower_mode
+
         LDR r1, =#186916
         BL delay
 
@@ -71,22 +80,15 @@ lineFollower:
         B seekLine
 
     
-    endLineFollower:
-
+    end_line_follower_mode:
     // set the motor speed to 0
         MOV r11, #0
         MOV r12, #0
-
-        @ LDR r1, =MOTOR_0_BASEADDR
-        @ MOV r2, #0
-        @ BL change_motor_speed
-        @ LDR r1, =MOTOR_1_BASEADDR
-        @ BL change_motor_speed
-
+    // set a delay to allow the motorPID to stop the motors
         LDR r1, =#46500000
         BL delay
 
-    // turn off the GTC
+    // turn off the GTC which
         LDR r0, =GTC_BASEADDR
         LDR r1, =#0xFF0E
         STR r1, [r0, #0x08]
@@ -97,7 +99,7 @@ lineFollower:
 
 // Updates the target rpm values for motor0 and motor1
 update_motor_targets:
-    PUSH {lr}
+    PUSH {lr, r0-r3}
     BL get_LF_error
     CMP r3, #0b00000
     BEQ fullStop
@@ -126,12 +128,12 @@ update_motor_targets:
     LDRGT r12, =#420   @ if the control value is more than the max set it to the max
     CMP r12, r2
     LDRLT r12, =#0       @ if the control value is less than the min set it to the min
-    POP {lr}
+    POP {lr, r0-r3}
     BX lr
 
     fullStop:
         POP {lr}
-        B endLineFollower
+        B end_line_follower_mode
 
 
 # r4 is used to return the error
@@ -143,15 +145,15 @@ get_LF_error:
     CMP r0, #0b11111
     MOVEQ r4, #0
     CMP r0, #0b01111
-    MOVEQ r4, #-2
+    MOVEQ r4, #-8
     CMP r0, #0b10111
-    MOVEQ r4, #-1
+    MOVEQ r4, #-4
     CMP r0, #0b11011
-    MOVEQ r4, #1
+    MOVEQ r4, #-1
     CMP r0, #0b11101
-    MOVEQ r4, #2
+    MOVEQ r4, #1
     CMP r0, #0b11110
-    MOVEQ r4, #3
+    MOVEQ r4, #4
     MOV r3, r0
 
     POP {lr}
