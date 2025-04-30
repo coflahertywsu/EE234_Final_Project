@@ -8,6 +8,8 @@
 .ifndef ROBOMAL_S
 .set ROBOMAL_S, 1
 
+.include "../src/timers.S"
+.include "../src/interrupt.S"
 // .include "../src/RobotMotors.S"
 .include "../src/motorPID.S"
 
@@ -22,9 +24,9 @@ program_string: .asciz "This is Program Mode brought to you by robomal!\n"
 .set TWO_SEC, 200000000
 
 # ROBOMAL Architecture: 16-bit VonNeumann RISC
-// ROBO_Instructions: .hword 0x13CF, 0x405F, 0x415F, 0x425F, 0x442F, 0x453F, 0x442F, 0x432F, 0x442F, 0x463F, 0x44FF, 0x3300
+@ ROBO_Instructions: .hword 0x1398, 0x402D, 0x412D, 0x422D, 0x442D, 0x452D, 0x442D, 0x432D, 0x442D, 0x462D, 0x44FF, 0x3333
 
-robomal_instruction_set: .space 0xFF	@ you should have something like this, buffer size = 256 bytes  
+robomal_instruction_set: .space 0xFF	@ you should have something like this, buffer size = 256 bytes
 
 # ROBOMAL Register File
 # r6 = Program counter
@@ -81,6 +83,7 @@ program_mode:
 
 # tell the robot to run a program
 runROBO_Program:
+    PUSH {lr}
     # initialie the PC to the start of the program
     # PC will be the offset from the beginning of instruction memory
     MOV r6, #0
@@ -99,7 +102,7 @@ runROBO_Program:
     ROBO_loop:
         BL simulateClockCycle
         // this will break out based on the halt button being pressed
-        BL uart0_read_structured  
+        BL uart0_read_structured
         LDRB r0, [r0]
         CMP r0, #0xF3
         BEQ end_ROBO_loop
@@ -141,6 +144,7 @@ simulateClockCycle:
 fetch:
     # get a pointer to the base address of the instruction memory
     LDR r0, =robomal_instruction_set
+    @ LDR r0, =ROBO_Instructions
 
     # fetching the halfword (LDRH) instruction located at ROBO_Instructions with an offset of the program counter (r6)
     LDRH r7, [r0, r6]
@@ -198,10 +202,11 @@ execute:
 
             B endExecute
         storeSpeed:
-        // add code to make sure final value is not less than zero
             MOV r10, r9
-            LSL r10, #1
-            SUB r10, r10, #90
+            LSL r10, #1         @ multiply the 0-255 value by 2
+            SUB r10, r10, #90   @ subtract 90
+            CMP r10, #0         @ compare value to zero
+            MOVLT r10, #0       @ if less than zero make it zero
             B endExecute
 
     arithmetic:
@@ -252,6 +257,8 @@ execute:
             MOV r5, #50
             ADD r11, r10, r5
             SUB r12, r10, r5
+            CMP r12, #0
+            MOVLT r12, #0
             // delay for prescribed amount of time
             MOV r1, r9
             LSL r1, #20
@@ -270,6 +277,8 @@ execute:
             // adjust the motor speed to turn right
             MOV r5, #50
             SUB r11, r10, r5
+            CMP r11, #0
+            MOVLT r11, #0
             ADD r12, r10, r5         
             // delay for prescribed amount of time
             MOV r1, r9

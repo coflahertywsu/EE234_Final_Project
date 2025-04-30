@@ -16,9 +16,11 @@
 .include "../src/PMODB.S"
 .include "../src/RobotMotors.S"
 
-.set LF_kp, 45     @ sets the line follow proportional constant kp
-.set LF_ki, 1      @ sets the line follow integral constant ki
-.set LF_kd, 950    @ sets the line follow derivative constant kd
+.set leds, 0x41210000
+
+.set LF_kp, 5      @ sets the line follow proportional constant kp
+.set LF_ki, 0      @ sets the line follow integral constant ki
+.set LF_kd, 100    @ sets the line follow derivative constant kd
 
 .global LF_err_int0
 .global LF_err_int1
@@ -43,9 +45,9 @@ LF_err_int4: .word 0
 .text
 
 line_follower_mode:
-    PUSH {lr}
-    LDR r1, =line_follower_string
-    BL uart1_write
+    PUSH {lr, r0-r12}
+    @ LDR r1, =line_follower_string            ############ Change ##############
+    @ BL uart1_write
 
     // set the direction to forward
     LDR r1, =MOTOR_0_BASEADDR
@@ -55,8 +57,19 @@ line_follower_mode:
     MOV r2, #1
     BL change_motor_dir
 
+    // clear the line follower registers
+    MOV r4, #0
+    MOV r5, #0
+    MOV r6, #0
+    MOV r7, #0
+    MOV r8, #0
+    MOV r9, #0
+    MOV r10, #0
+    MOV r11, #0
+    MOV r12, #0
+
     // set the target rpm
-    MOV r10, #150
+    MOV r10, #180
     MOV r11, r10
     MOV r12, r10
 
@@ -67,15 +80,14 @@ line_follower_mode:
 
 // Main loop while seeking the line    
     seekLine:
-        BL uart0_read_structured  @ this will break out based on the halt button being pressed
-        LDRB r0, [r0]  @
-        CMP r0, #0xF3  @
-        BEQ end_line_follower_mode
-
-        LDR r1, =#186916
-        BL delay
-
+        @ BL uart0_read_structured  @ this will break out based on the halt button being pressed      ################## Change ################
+        @ LDRB r0, [r0]  @
+        @ CMP r0, #0xF3  @
+        @ BEQ end_line_follower_mode
         BL update_motor_targets
+
+        @ LDR r1, =#140000
+        @ BL delay
 
         B seekLine
 
@@ -93,7 +105,7 @@ line_follower_mode:
         LDR r1, =#0xFF0E
         STR r1, [r0, #0x08]
 
-        POP {lr}
+        POP {lr, r0-r12}
         BX lr       
 
 
@@ -101,7 +113,8 @@ line_follower_mode:
 update_motor_targets:
     PUSH {lr, r0-r3}
     BL get_LF_error
-    CMP r3, #0b00000
+
+    CMP r3, #0b11111111
     BEQ fullStop
 
     BL LF_err_eint
@@ -115,48 +128,91 @@ update_motor_targets:
     ADD r0, r7, r8
     ADD r0, r0, r9      @ this gives us u(t) in r0
 
-    SUB r11, r10, r0    @ This sets motor0 rpm !!!!!!!!!!!!!!!
-    ADD r12, r10, r0    @ This sets motor1 rpm !!!!!!!!!!!!!!!
+    SUB r4, r10, r0    @ this is the new motor0 value
+    ADD r5, r10, r0    @ this is the new motor1 value
 
     MOV r1, #420     @ this is the max motor control value
-    MOV r2, #0          @ this is the min motor control value
-    CMP r11, r1
-    LDRGT r11, =#420   @ if the control value is more than the max set it to the max
-    CMP r11, r2
-    LDRLT r11, =#0       @ if the control value is less than the min set it to the min
-    CMP r12, r1
-    LDRGT r12, =#420   @ if the control value is more than the max set it to the max
-    CMP r12, r2
-    LDRLT r12, =#0       @ if the control value is less than the min set it to the min
+    MOV r2, #0      @ this is the min motor control value
+    CMP r4, r1
+    LDRGT r4, =#420   @ if the control value is more than the max set it to the max
+    CMP r4, r2
+    LDRLT r4, =#0       @ if the control value is less than the min set it to the min
+    CMP r5, r1
+    LDRGT r5, =#420   @ if the control value is more than the max set it to the max
+    CMP r5, r2
+    LDRLT r5, =#0       @ if the control value is less than the min set it to the min
+
+    MOV r11, r4     @ This sets motor0 rpm !!!!!!!!!!!!!!!
+    MOV r12, r5     @ This sets motor1 rpm !!!!!!!!!!!!!!!
+
+
     POP {lr, r0-r3}
     BX lr
 
     fullStop:
-        POP {lr}
+        POP {lr, r0-r3}
         B end_line_follower_mode
 
 
 # r4 is used to return the error
 get_LF_error:
-    PUSH {lr}    
-
+    PUSH {lr, r0, r1}    
+    # setup PMODB as an output
+    MOV r1, #1
+    BL setupPMODB
+    # write all ones to PMODB
+    MOV r1, #0b11111111
+    BL writePMODB
+    # delay to allow the capacitors time to charge
+    MOV r1, #935
+    BL delay
+    # setup PMODB as in input
+    MOV r1, #0
+    BL setupPMODB
+    # timing delay to allow time for the reflected light to reach the sensor
+    LDR r1, =#80000
+    BL delay
+    # read the data from PMODB
     BL readPMODB
-    AND r0, r0, #0b11111
-    CMP r0, #0b11111
+
+    LDR r1, =leds
+    STR r0, [r1]
+
+    CMP r0, #0b00000000
     MOVEQ r4, #0
-    CMP r0, #0b01111
-    MOVEQ r4, #-8
-    CMP r0, #0b10111
-    MOVEQ r4, #-4
-    CMP r0, #0b11011
-    MOVEQ r4, #-1
-    CMP r0, #0b11101
-    MOVEQ r4, #1
-    CMP r0, #0b11110
+    CMP r0, #0b10000000
     MOVEQ r4, #4
+    CMP r0, #0b11000000
+    MOVEQ r4, #3
+    CMP r0, #0b11100000
+    MOVEQ r4, #3    
+    CMP r0, #0b01100000
+    MOVEQ r4, #2
+    CMP r0, #0b01110000
+    MOVEQ r4, #2
+    CMP r0, #0b00110000
+    MOVEQ r4, #1
+    CMP r0, #0b00111000
+    MOVEQ r4, #1    
+    CMP r0, #0b00011000
+    MOVEQ r4, #0
+    CMP r0, #0b00011100
+    MOVEQ r4, #-1    
+    CMP r0, #0b00001100
+    MOVEQ r4, #-1
+    CMP r0, #0b00001110
+    MOVEQ r4, #-2    
+    CMP r0, #0b00000110
+    MOVEQ r4, #-2
+    CMP r0, #0b00000111
+    MOVEQ r4, #-3    
+    CMP r0, #0b00000011
+    MOVEQ r4, #-3
+    CMP r0, #0b00000001
+    MOVEQ r4, #-4
     MOV r3, r0
 
-    POP {lr}
+    POP {lr, r0, r1}
     BX lr
 
 
@@ -193,6 +249,7 @@ LF_err_eint:
     POP {lr, r2-r3}
     BX lr
 
+# r6 is used to return the error difference
 LF_dedt:
     PUSH {lr, r2}
 

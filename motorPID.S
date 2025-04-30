@@ -10,17 +10,16 @@
 .ifndef MOTORPID_S_ 
 .set MOTORPID_S_, 1
 
-.include "../src/PMODB.S"
 .include "../src/RobotMotors.S"
 
 
-.set motor0_kp, 800     @ sets the motor0 proportional constant kp
-.set motor0_ki, 90        @ sets the motor0 integral constant ki
-.set motor0_kd, 70        @ sets the motor0 derivative constant kd
+.set motor0_kp, 600     @ sets the motor0 proportional constant kp
+.set motor0_ki, 160        @ sets the motor0 integral constant ki
+.set motor0_kd, 4000        @ sets the motor0 derivative constant kd
 
-.set motor1_kp, 800     @ sets the motor1 proportional constant kp
-.set motor1_ki, 90        @ sets the motor1 integral constant ki
-.set motor1_kd, 70        @ sets the motor1 derivative constant kd
+.set motor1_kp, 600     @ sets the motor1 proportional constant kp
+.set motor1_ki, 160        @ sets the motor1 integral constant ki
+.set motor1_kd, 4000        @ sets the motor1 derivative constant kd
 
 // addresses in which to store error data for summation
 .global mot0_int0
@@ -54,7 +53,7 @@ mot1_int4: .word 0
 
 # this updates the motor drive signal to the motors
 update_motors:
-    PUSH {lr}
+    PUSH {lr, r0-r2}
     BL calculate_mot0_control
     LDR r1, =MOTOR_0_BASEADDR
     MOV r2, r0
@@ -64,7 +63,7 @@ update_motors:
     LDR r1, =MOTOR_1_BASEADDR
     MOV r2, r0
     BL change_motor_speed
-    POP {lr}
+    POP {lr, r0-r2}
 
 # r0 is used to return motor0 control signal u(t)
 calculate_mot0_control:
@@ -123,22 +122,22 @@ calculate_mot1_control:
 # r0 is used to return motor0 error
 # r11 holds the motor0 rpm target
 get_mot0_error:
-    PUSH {lr}    
+    PUSH {lr, r1}    
     LDR r1, =MOTOR_0_BASEADDR
     BL read_motor_rpm
     SUB r0, r11, r0      @ this calculates the motor0 error
-    POP {lr}
+    POP {lr, r1}
     BX lr
 
 
 # r0 is used to return motor1 error
 # r12 holds the motor1 rpm target
 get_mot1_error:
-    PUSH {lr}    
+    PUSH {lr, r1}    
     LDR r1, =MOTOR_1_BASEADDR
     BL read_motor_rpm
     SUB r0, r12, r0      @ this calculates the motor1 error
-    POP {lr}
+    POP {lr, r1}
     BX lr
 
 
@@ -146,7 +145,7 @@ get_mot1_error:
 # r1 is used to pass in the current error
 mot0_eint:
     PUSH {lr, r2-r3}
-
+    MOV r0, #0
     LDR r3, =mot0_int4  @ load r3 with address of 5th value
     LDR r2, =mot0_int3  @ load r2 with address of 4th value
     LDR r2, [r2]        @ load r2 with value of 4th value
@@ -170,7 +169,6 @@ mot0_eint:
     LDR r3, =mot0_int0
     STR r1, [r3]
     ADD r0, r0, r1      @ return new sum of last 5 error values
-
     POP {lr, r2-r3}
     BX lr
 
@@ -178,7 +176,7 @@ mot0_eint:
 # r1 is used to pass in the current error
 mot1_eint:
     PUSH {lr, r2-r3}
-
+    MOV r0, #0
     LDR r3, =mot1_int4  @ load r3 with address of 5th value
     LDR r2, =mot1_int3  @ load r2 with address of 4th value
     LDR r2, [r2]        @ load r2 with value of 4th value
@@ -202,7 +200,6 @@ mot1_eint:
     LDR r3, =mot1_int0
     STR r1, [r3]
     ADD r0, r0, r1      @ return new sum of last 5 error values
-
     POP {lr, r2-r3}
     BX lr
 
@@ -210,11 +207,10 @@ mot1_eint:
 # r1 is used to pass in the current error
 mot0_dedt:
     PUSH {lr, r2}
-
+    MOV r0, #0
     LDR r2, =mot0_int1  @ this is the address where the previous error is stored
     LDR r2, [r2]        @ this loads the previous error
     SUB r0, r1, r2      @ this returns the difference of the current error and the previous error in r0
-
     POP {lr, r2}
     BX lr
 
@@ -222,11 +218,10 @@ mot0_dedt:
 # r1 is used to pass in the current error
 mot1_dedt:
     PUSH {lr, r2}
-
+    MOV r0, #0
     LDR r2, =mot1_int1  @ this is the address where the previous error is stored
     LDR r2, [r2]        @ this loads the previous error
-    SUB r0, r1, r2      @ this returns the difference of the current error and the previous error in r0
-    
+    SUB r0, r1, r2      @ this returns the difference of the current error and the previous error in r0    
     POP {lr, r2}
     BX lr
 

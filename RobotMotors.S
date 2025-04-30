@@ -83,14 +83,14 @@ change_motor_speed:
 # r1 is the base address of the corresponding motor to modify
 # r2 is the motor dir; 0 for backward, 1 for forward
 change_motor_dir:
-	PUSH {r0, r3}
+	PUSH {lr, r0-r3}
 	# Change motor direction to value stored in r2
 	LDR r0, [r1, #0x08] @ store speed in r0
 	MOV r3, #0
 	STR r3, [r1, #0x08] @ set speed to 0
 	STR r2, [r1, #0x04] @ change direction
 	STR r0, [r1, #0x08] @ reset speed
-	POP {r0, r3}
+	POP {lr, r0-r3}
 	BX lr
 
 # Let's assume that r1 is passed into this function call as the base address of the corresponding motor to modify
@@ -106,6 +106,7 @@ read_motor_rpm:
 	STR r2, [r4, #0x0C]
 
 	# 2. Short delay to wait until the value has been updated in read register
+
 	NOP
 	NOP
 	NOP
@@ -136,6 +137,7 @@ read_motor_rpm:
 		STR r2, [r4, #0x0C]
 		POP {lr, r2, r3, r4}
 		BX lr
+
 
 
 # delay uses counts down from the number passed in r1

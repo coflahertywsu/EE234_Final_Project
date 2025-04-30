@@ -11,6 +11,7 @@
 .set SRC_timers_S_, 1
 
 .set GTC_BASEADDR, 0xF8F00200
+.set TTC0_BASEADDR, 0xF8001000
 
 .data
 
@@ -20,10 +21,10 @@
 configure_GTC:
     LDR r0, =GTC_BASEADDR
 
-    # set the comparator value to make a one second timer interrupt
+    # set the comparator value
     # time interval / T_GTC =  comparator value + 1
-    # 0.0004s / (1/1.302083) = comparator + 1 = 52; comparator = 51
-    LDR r1, =#51
+    # 0.0005s / (1/1.302083) = comparator + 1 = 651; comparator = 650
+    LDR r1, =#650
     MOV r10, r1
     STR r1, [r0, #0x10]
     STR r1, [r0, #0x18]
@@ -44,6 +45,34 @@ configure_GTC:
 
     MOV pc, lr
 
+@ configure_TTC0:
+@     LDR r0, =TTC0_BASEADDR
 
+@     # set the TTC0 input clock
+@     # we can choose the TTC's frequency by taking 111.1111 MHz / (prescaler + 1)
+@     # choosing a prescaler value of 255; f_TTC = 111.1111 MHz / (255 + 1) = 434.028 kHz
+@     LDR r1, =#0xF
+@     STR r1, [r0]
+    
+@     # set the mode Configuration
+@     # PL=0, OW=0, CR=1, ME=0, DC=0, IM=1, OD=1
+@     LDR r1, =#0x13
+@     STR r1, [r0, #0x0C]
+
+@     # set the interval value
+@     # time interval / T_GTC =  comparator value + 1
+@     # 0.005s / (1/434028) = comparator + 1 = 2170; comparator = 2169
+@     LDR r1, =#2169
+@     STR r1, [r0, #0x24]
+    
+@     # set the interval interrupt enable to 1
+@     MOV r1, #0x1
+@     STR r1, [r0, #0x60]
+
+ 
+
+
+
+    MOV pc, lr
 
 .endif /* SRC_timers_S_ */
