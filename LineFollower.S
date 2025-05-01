@@ -18,9 +18,9 @@
 
 .set leds, 0x41210000
 
-.set LF_kp, 5      @ sets the line follow proportional constant kp
+.set LF_kp, 21      @ sets the line follow proportional constant kp
 .set LF_ki, 0      @ sets the line follow integral constant ki
-.set LF_kd, 100    @ sets the line follow derivative constant kd
+.set LF_kd, 0    @ sets the line follow derivative constant kd
 
 .global LF_err_int0
 .global LF_err_int1
@@ -163,13 +163,13 @@ get_LF_error:
     # write all ones to PMODB
     MOV r1, #0b11111111
     BL writePMODB
-    # delay to allow the capacitors time to charge
+    # 10 us delay to allow the capacitors time to charge
     MOV r1, #935
     BL delay
     # setup PMODB as in input
     MOV r1, #0
     BL setupPMODB
-    # timing delay to allow time for the reflected light to reach the sensor
+    # 856 us timing delay to allow time for the reflected light to reach the sensor
     LDR r1, =#80000
     BL delay
     # read the data from PMODB
@@ -183,31 +183,31 @@ get_LF_error:
     CMP r0, #0b10000000
     MOVEQ r4, #4
     CMP r0, #0b11000000
-    MOVEQ r4, #3
+    MOVEQ r4, #4
     CMP r0, #0b11100000
     MOVEQ r4, #3    
     CMP r0, #0b01100000
-    MOVEQ r4, #2
-    CMP r0, #0b01110000
+    MOVEQ r4, #3
+    CMP r0, #0b00100000
     MOVEQ r4, #2
     CMP r0, #0b00110000
+    MOVEQ r4, #2
+    CMP r0, #0b00010000
     MOVEQ r4, #1
-    CMP r0, #0b00111000
-    MOVEQ r4, #1    
     CMP r0, #0b00011000
     MOVEQ r4, #0
-    CMP r0, #0b00011100
-    MOVEQ r4, #-1    
-    CMP r0, #0b00001100
+    CMP r0, #0b00001000
     MOVEQ r4, #-1
-    CMP r0, #0b00001110
-    MOVEQ r4, #-2    
-    CMP r0, #0b00000110
+    CMP r0, #0b00001100
     MOVEQ r4, #-2
+    CMP r0, #0b00000100
+    MOVEQ r4, #-2
+    CMP r0, #0b00000110
+    MOVEQ r4, #-3
     CMP r0, #0b00000111
     MOVEQ r4, #-3    
     CMP r0, #0b00000011
-    MOVEQ r4, #-3
+    MOVEQ r4, #-4
     CMP r0, #0b00000001
     MOVEQ r4, #-4
     MOV r3, r0

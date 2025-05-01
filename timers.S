@@ -23,8 +23,8 @@ configure_GTC:
 
     # set the comparator value
     # time interval / T_GTC =  comparator value + 1
-    # 0.0005s / (1/1.302083) = comparator + 1 = 651; comparator = 650
-    LDR r1, =#650
+    # 0.001s / (1/1.302083) = comparator + 1 = 1302; comparator = 1301
+    LDR r1, =#1301
     MOV r10, r1
     STR r1, [r0, #0x10]
     STR r1, [r0, #0x18]
