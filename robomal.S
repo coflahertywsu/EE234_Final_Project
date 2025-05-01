@@ -62,9 +62,9 @@ program_mode:
 
         LDRB r1, [r0, #1]			@ load number of instructions to be delivered
         SUB r1, r1, #1
-        MOV r2, #1			@ instructions read counter
+        MOV r2, #0			@ instructions read counter
         LDR r3, =robomal_instruction_set
-        BL uart1_write_hex_chars
+        @ BL uart1_write_hex_chars
 
     copy_instructions_loop:
         BL uart0_read_structured	@ read uart0
@@ -80,6 +80,10 @@ program_mode:
      LDR r1, =debug_statement1
      BL uart1_write   
 
+     BL runROBO_Program
+
+     POP {lr, r1}
+     BX lr
 
 # tell the robot to run a program
 runROBO_Program:
@@ -107,7 +111,7 @@ runROBO_Program:
         CMP r0, #0xF3
         BEQ end_ROBO_loop
 
-        CMP r8, #0x33
+        CMP r9, #0x33
         BNE ROBO_loop
 
     end_ROBO_loop:
@@ -142,6 +146,7 @@ simulateClockCycle:
 # PC = r6
 # Instruction register = r7
 fetch:
+    PUSH {lr}
     # get a pointer to the base address of the instruction memory
     LDR r0, =robomal_instruction_set
     @ LDR r0, =ROBO_Instructions
@@ -152,7 +157,7 @@ fetch:
     # increment the pc to point to the next instruction
     # need to increment by 2 because these are halfwords
     ADD r6, r6, #2
-
+    POP {lr}
     BX lr
 
 # break the instruction into its parts
@@ -160,13 +165,14 @@ fetch:
 # opcode = r8
 # operand = r9
 decode:
+    PUSH {lr}
     # 0xYYZZ, where YY is the opcode and ZZ is the operand
     # get opcode from instruction reg; r8 = 0xYY
     LSR r9, r7, #8
 
     # get the operand from instruction reg; r9 = 0xZZ
     AND r8, r7, #0xFF
-
+    POP {lr}
     BX lr
 
 # perform our operation
