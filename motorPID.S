@@ -1,7 +1,7 @@
 /*
 *   motorPID.S
 *   created: 20 April, 2025
-*   edited:  20 April, 2025
+*   edited:  1 May, 2025
 *       author: Ron Shackelford
 */
 @ Conditional Compilation Guard Code
@@ -13,13 +13,13 @@
 .include "../src/RobotMotors.S"
 
 
-.set motor0_kp, 600     @ sets the motor0 proportional constant kp
-.set motor0_ki, 160        @ sets the motor0 integral constant ki
-.set motor0_kd, 4000        @ sets the motor0 derivative constant kd
+.set motor0_kp, 900     @ sets the motor0 proportional constant kp
+.set motor0_ki, 40        @ sets the motor0 integral constant ki
+.set motor0_kd, 450        @ sets the motor0 derivative constant kd
 
-.set motor1_kp, 600     @ sets the motor1 proportional constant kp
-.set motor1_ki, 160        @ sets the motor1 integral constant ki
-.set motor1_kd, 4000        @ sets the motor1 derivative constant kd
+.set motor1_kp, 900     @ sets the motor1 proportional constant kp
+.set motor1_ki, 40        @ sets the motor1 integral constant ki
+.set motor1_kd, 450        @ sets the motor1 derivative constant kd
 
 // addresses in which to store error data for summation
 .global mot0_int0

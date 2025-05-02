@@ -10,13 +10,12 @@
 
 .include "../src/timers.S"
 .include "../src/interrupt.S"
-// .include "../src/RobotMotors.S"
 .include "../src/motorPID.S"
 
 .data
 
 debug_statement1: .asciz "Copy Instructions occurred"
-program_string: .asciz "This is Program Mode brought to you by robomal!\n"
+program_string: .asciz "This is Program Mode\n"
 
 .set HALF_WORD_MASK, 0xFFFF
 .set QUARTER_SEC, 25000000
@@ -64,7 +63,7 @@ program_mode:
         SUB r1, r1, #1
         MOV r2, #0			@ instructions read counter
         LDR r3, =robomal_instruction_set
-        @ BL uart1_write_hex_chars
+        BL uart1_write_hex_chars
 
     copy_instructions_loop:
         BL uart0_read_structured	@ read uart0
@@ -80,10 +79,9 @@ program_mode:
      LDR r1, =debug_statement1
      BL uart1_write   
 
-     BL runROBO_Program
-
-     POP {lr, r1}
-     BX lr
+    BL runROBO_Program
+    POP {lr, r1}
+    BX lr
 
 # tell the robot to run a program
 runROBO_Program:
@@ -210,9 +208,7 @@ execute:
         storeSpeed:
             MOV r10, r9
             LSL r10, #1         @ multiply the 0-255 value by 2
-            SUB r10, r10, #90   @ subtract 90
-            CMP r10, #0         @ compare value to zero
-            MOVLT r10, #0       @ if less than zero make it zero
+            ADD r10, r10, #90   @ add 90
             B endExecute
 
     arithmetic:

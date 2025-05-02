@@ -117,9 +117,9 @@ read_motor_rpm:
 	LDR r3, [r4, #0x10]
 
 	# 4. Manipulate to true RPM value based on: RPM = (1MHz / (RPM_raw * GearRatio)) * (60s/min)
-	MOV r2, #3712
+	MOV r2, #90
 	MUL r3, r3, r2
-	LDR r2, =#100000000
+	LDR r2, =#1000000
 	MOV r0, #0
 	CMP r3, #0
 	BEQ endReadRPM
