@@ -1,7 +1,7 @@
 /*
 *   rcMode.S
-*   created: March 17th, 2025
-*   edited:  March 21st, 2025
+*   created: 17 March, 2025
+*   edited:  1 May, 2025
 *       author: Ron Shackelford
 */
 @ Conditional Compilation Guard Code
@@ -11,7 +11,7 @@
 .set SRC_RCMODE_S_, 1
 
 .data
-rc_mode_string: .asciz "Start your engines!  This is RC mode.\n"
+rc_mode_string: .asciz "This is RC mode.\n"
 
 .text
 
@@ -21,10 +21,10 @@ rc_mode:
     BL uart1_write
     
     // clear the registers that will hold program data
-    MOV r9, #0
-    MOV r10, #0
-    MOV r11, #0
-    MOV r12, #0
+    MOV r9, #0      @ x data
+    MOV r10, #0     @ y data
+    MOV r11, #0     @ Mot0 target rpm
+    MOV r12, #0     @ Mot1 target rpm
 
     // turn on the motors by turning on the GTC
     LDR r0, =GTC_BASEADDR
@@ -66,15 +66,15 @@ rc_mode:
             MOV r2, #1
             BL change_motor_dir
 
-            SUB r1, r10, #4     @ subtract 4 from y data and multiply by 100 to get motor speed
-            MOV r2, #100
+            SUB r1, r10, #4     @ subtract 4 from y data and multiply by 150 to get motor speed
+            MOV r2, #150
             MUL r11, r1, r2
             MOV r12, r11            
             BL rc_turn
             B joystick_read_loop
         
         rc_reverse:
-            LDR r1, =MOTOR_0_BASEADDR
+            LDR r1, =MOTOR_0_BASEADDR   @ Going backward...need to change direction of the motor
             MOV r2, #0
             BL change_motor_dir
             LDR r1, =MOTOR_1_BASEADDR
@@ -82,8 +82,8 @@ rc_mode:
             BL change_motor_dir  
 
             MVN r1, r10         @ since data is lower than 3, in order to get the motor speed we must
-            ADD r1, r1, #3      @ change the sign of the data, add 3, and multiply by 100 to get motor speed
-            MOV r2, #100
+            ADD r1, r1, #3      @ change the sign of the data, add 3, and multiply by 150 to get motor speed
+            MOV r2, #150
             MUL r11, r1, r2
             MOV r12, r11
             BL rc_turn
@@ -116,8 +116,8 @@ rc_turn:
     B end_rc_turn
 
     rc_turn_right:
-        SUB r1, r9, #4      @ same as above on the algorithm but multiplying by 30 and adding
-        MOV r2, #30         @ to the outside wheel to get the robot to turn.
+        SUB r1, r9, #4      @ same as above on the algorithm but multiplying by 40 and adding
+        MOV r2, #40         @ to the outside wheel to get the robot to turn.
         MUL r1, r1, r2     
         ADD r12, r12, r1
         B end_rc_turn
@@ -125,7 +125,7 @@ rc_turn:
     rc_turn_left:
         MVN r1, r9
         ADD r1, r1, #3
-        MOV r2, #30
+        MOV r2, #40
         MUL r1, r1, r2
         ADD r11, r11, r1
         B end_rc_turn
